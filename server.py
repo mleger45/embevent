@@ -3,7 +3,9 @@ import requests
 from bs4 import BeautifulSoup
 import os
 import sqlite3
+import logging
 
+logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.DEBUG)
 
 URL = os.environ['SOURCE_URL']
 AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
@@ -26,6 +28,7 @@ def processUpdates(cards):
     old_cards = len(cursor.fetchall())
 
     if len(cards) > old_cards:
+        logging.info("New updates. Processing")
         
         card = cards[0]
         title    = card.find_all('h2', class_='h3')[0].text
@@ -38,9 +41,14 @@ def processUpdates(cards):
         connection.commit()
         connection.close()
 
+        logging.info("Update stored in DB")
+
         send_simple_message(title=title, message=card)
+
+        logging.info("Mail sent")
         return card.text
     else:
+        logging.info("No updates generated")
         f = cards[0]
         the_date, = f.find_all('h3', class_='h5')
         return "No news. Last update: {0}. articles available: {1}".format(the_date.text, old_cards)
